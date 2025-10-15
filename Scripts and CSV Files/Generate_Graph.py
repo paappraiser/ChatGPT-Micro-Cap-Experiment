@@ -59,8 +59,12 @@ def load_portfolio_details(
         else:
             baseline_date = pd.Timestamp.today()
 
-    baseline_row = pd.DataFrame({"Date": [baseline_date], "Total Equity": [baseline_equity]})
-    return pd.concat([baseline_row, chatgpt_totals], ignore_index=True).sort_values("Date")
+    baseline_row = pd.DataFrame(
+        {"Date": [baseline_date], "Total Equity": [baseline_equity]}
+    )
+    return pd.concat([baseline_row, chatgpt_totals], ignore_index=True).sort_values(
+        "Date"
+    )
 
 
 def download_sp500(start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.DataFrame:
@@ -72,8 +76,8 @@ def download_sp500(start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.DataF
     sp500 = sp500.reset_index()
     if isinstance(sp500.columns, pd.MultiIndex):
         sp500.columns = sp500.columns.get_level_values(0)
-    spx_27_price = 6173.07
-    scaling_factor = 100 / spx_27_price
+    spx_start_price = sp500["Close"].iloc[0]
+    scaling_factor = 100 / spx_start_price
     sp500["SPX Value ($100 Invested)"] = sp500["Close"] * scaling_factor
     return sp500
 
@@ -83,7 +87,7 @@ def main(
 ) -> None:
     """Generate and display the comparison graph."""
     if baseline_equity <= 0:
-        raise SystemError("Baseline equity must be positive.")
+        raise SystemExit("Baseline equity must be positive.")
 
     chatgpt_totals = load_portfolio_details(baseline_equity, start_date)
 
@@ -137,10 +141,18 @@ def main(
     final_spx = sp500["SPX Value ($100 Invested)"].iloc[-1]
 
     plt.text(
-        final_date, final_chatgpt + 0.3, f"+{final_chatgpt - baseline_equity:.1f}%", color="blue", fontsize=9
+        final_date,
+        final_chatgpt + 0.3,
+        f"+{final_chatgpt - baseline_equity:.1f}%",
+        color="blue",
+        fontsize=9,
     )
     plt.text(
-        final_date, final_spx + 0.9, f"+{final_spx - 100:.1f}%", color="orange", fontsize=9
+        final_date,
+        final_spx + 0.9,
+        f"+{final_spx - 100:.1f}%",
+        color="orange",
+        fontsize=9,
     )
     plt.title("ChatGPT's Micro Cap Portfolio vs. S&P 500")
     plt.xlabel("Date")
@@ -176,4 +188,3 @@ if __name__ == "__main__":
     end = parse_date(args.end_date, "end date") if args.end_date else None
 
     main(args.baseline_equity, start, end)
-
